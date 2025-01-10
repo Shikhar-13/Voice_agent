@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot Management</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+        }
+        .btn, select {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            margin-top: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .btn {
+            background-color: #007BFF;
+            color: #fff;
+            border: none;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+        }
+        .message {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f1f1f1;
+            border-radius: 5px;
+            word-wrap: break-word;
+            min-height: 50px;
+            text-align: center;
+        }
+        .loading {
+            font-size: 18px;
+            color: #007BFF;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Chatbot Management</h1>
+        
+        <!-- Dropdown to select LLM -->
+        <label for="llmSelect">Select LLM Model:</label>
+        <select id="llmSelect">
+            <option value="gpt4">GPT-4</option>
+            <option value="gpt4o">GPT-4 OpenAI</option>
+            <option value="gpt4o-mini">GPT-4 OpenAI Mini</option>
+            <option value="claude-3-5-sonnet-20240620">Claude-3.5 Sonnet</option>
+            <option value="claude-3-5-sonnet-20240620-mini">Claude-3.5 Sonnet Mini</option>
+        </select>
+
+        <button class="btn" id="createBtn">Create & Update Chatbot</button>
+        <div class="message" id="responseMessage">Waiting for action...</div>
+    </div>
+    <div id="cd-widget"></div>
+    <script>
+      (function() {
+          if (window.chatWidgetScriptLoaded) return;
+          window.ChatWidgetConfig = {
+            projectId: "678165ba2eaa21a7a56cda1a", 
+          };
+    
+          var chatWidgetScript = document.createElement("script");
+          chatWidgetScript.type = 'text/javascript';
+          chatWidgetScript.src = "https://storage.googleapis.com/cdwidget/dist/assets/js/main.js";
+          document.body.appendChild(chatWidgetScript);
+    
+          window.chatWidgetScriptLoaded = true;
+      })();
+    </script>
+    
+    <script>
+        const ws = new WebSocket("ws://localhost:8765");
+
+        // Element references
+        const createBtn = document.getElementById("createBtn");
+        const responseMessage = document.getElementById("responseMessage");
+        const llmSelect = document.getElementById("llmSelect");
+
+        // Event listener for button click
+        createBtn.addEventListener("click", () => {
+            // Get the selected LLM model
+            const selectedLlm = llmSelect.value;
+            // Show loading text
+            responseMessage.innerHTML = '<span class="loading">Processing...</span>';
+
+            // Send selected LLM to WebSocket server
+            ws.send(JSON.stringify({ action: "create_and_update_chatbot", llm: selectedLlm }));
+        });
+
+        // Handle WebSocket connection open
+        ws.onopen = () => {
+            console.log("Connected to WebSocket server");
+        };
+
+        // Handle WebSocket messages from server
+        ws.onmessage = (event) => {
+            console.log("Message from server:", event.data);
+            // Display the message from the server
+            responseMessage.innerHTML = event.data;
+        };
+
+        // Handle WebSocket errors
+        ws.onerror = (error) => {
+            console.error("WebSocket error:", error);
+            responseMessage.innerHTML = "Error: Unable to connect to the server.";
+        };
+
+        // Handle WebSocket close event
+        ws.onclose = () => {
+            console.log("Disconnected from WebSocket server");
+            responseMessage.innerHTML = "Server disconnected. Try again later.";
+        };
+    </script>
+</body>
+</html>
